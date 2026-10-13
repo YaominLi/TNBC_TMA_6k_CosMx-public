@@ -1,0 +1,45 @@
+# Word / Office documents
+*.doc
+*.docx
+~$*
+
+# Raw / generated data
+raw/
+results/
+tmp/
+logs/
+
+# R session / project state
+.RData
+.RDataTmp*
+.Rhistory
+.Rproj.user/
+
+# Large R objects
+*.rds
+*.RDS
+*.rda
+*.RData
+
+# Generated figures/documents
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.ppt
+*.pptx
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# renv machine-specific state
+renv/library/
+renv/staging/
+renv/python/
+
+# Python publication-check caches
+__pycache__/
+*.pyc

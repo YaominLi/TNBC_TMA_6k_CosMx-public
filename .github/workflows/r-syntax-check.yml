@@ -1,0 +1,34 @@
+name: R syntax check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  parse-r-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Parse repository R scripts
+        shell: Rscript {0}
+        run: |
+          files <- c(
+            list.files("analysis", pattern = "\\.R$", full.names = TRUE, recursive = TRUE),
+            list.files("scripts", pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+          )
+          files <- sort(unique(files))
+          if (length(files) == 0L) stop("No R scripts found under analysis/ or scripts/.")
+          for (f in files) {
+            cat("Parsing:", f, "\n")
+            parse(file = f, keep.source = FALSE)
+          }
+          cat("Parsed", length(files), "R scripts successfully.\n")
