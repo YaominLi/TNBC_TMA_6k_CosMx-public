@@ -21,6 +21,18 @@ The repository supplies code and environment definitions; downloading it alone d
 
 Enrichment uses MSigDB **2025.1 human gene-symbol GMT** resources. Obtain the four files listed in [gene_sets/README.md](gene_sets/README.md) before running preflight. GMT resources are not bundled in the public code distribution.
 
+## Input provenance and annotation versions
+
+The initial data package supplied by Yi comprised four preprocessed R objects: `TNBC_6k_metadata_Bogang_selected.RDS` (cell metadata), `TNBC_6k_norm_Bogang.RDS` (normalized expression), `TNBC_6k_um_Bogang.RDS` (UMAP), and `TNBC_6k_xy_Bogang.RDS` (spatial coordinates). Here, `raw/` means project inputs; these are not instrument-level raw reads or images. “Supplied by” identifies the data provider, not authorship of every upstream processing step.
+
+Yi subsequently supplied `TNBC_6k_metadata_172FOVs_Bogang.RDS` (updated cell annotations and cancer-distance values) and `Immunotype_Wu_172FOVs_40genes.csv` (a supplied immunotype reference). These are provenance references, not additional inputs required by the current workflow. The immunotype reference CSV is distinct from `selected_subtype_specific_genes_tumor.csv`; the latter is the gene-list input used by 03_2. Provider attribution for that gene list and `T_cell_signalling.xlsx` is not established here.
+
+**The current `TNBC_6k_metadata_Bogang_selected.RDS` is a locally prepared, finalized metadata object, not the unchanged original file with that name.** Preparation matched the original metadata and Yi's updated metadata by shared `cell_id`, retained the updated fine labels in `celltype_new`, and mapped those labels to the broader `BC6k_refined` classes used downstream. Previous annotations and distances were preserved in `BC6k_refined_old` and `disttonearesttumor_old`. Updated `disttonearestcancer` values were converted from mm to µm during preparation to produce `disttonearesttumor`; distance groups were recalculated. Do not convert this finalized distance again.
+
+This metadata preparation did not regenerate the supplied norm/UMAP/XY objects. Align these objects by cell identifiers, not row position: the finalized metadata snapshot contains 275,204 cells across 172 FOVs and 5 slides, while the normalized expression object contains 294,923 cells by 6,175 genes. Use the recorded SHA-256 identities to distinguish the finalized input from an older file bearing the same name.
+
+The RDS written by 03_2 at `results/03_2/data/03_2_meta_with_immunotype_BW_top_40.rds` is a further **derived analysis output**. Its `immunotype_BW_top_40` labels are calculated locally from tumor-only FOV pseudobulk and the supplied signature gene list; they are not simply copied from Yi's immunotype-reference CSV.
+
 ## Fresh-clone quick start
 
 For a collaborator starting from a clean machine:

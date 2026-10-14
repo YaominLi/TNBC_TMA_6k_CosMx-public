@@ -69,9 +69,15 @@ suppressPackageStartupMessages({
 })
 
 # ---- 03 load data ----
+# Finalized local metadata integrating the original input with Yi's updated
+# 172-FOV annotations; the filename is retained from the original data package.
+# celltype_new: updated fine labels; BC6k_refined: mapped broad labels.
+# disttonearesttumor is already in micrometres. Do not multiply by 1000 again.
+# See README.md, 'Input provenance and annotation versions'.
 meta <- readRDS(file.path(raw, "TNBC_6k_metadata_Bogang_selected.RDS"))
 meta_dt <- as.data.table(meta)
 
+# Supplied normalized expression; align to finalized metadata by cell_id below.
 norm <- readRDS(file.path(raw, "TNBC_6k_norm_Bogang.RDS"))
 
 sig_file <- file.path(raw, "selected_subtype_specific_genes_tumor.csv")
