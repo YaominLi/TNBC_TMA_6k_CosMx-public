@@ -21,6 +21,27 @@ The repository supplies code, environment definitions and the T-cell gene-set wo
 
 Enrichment uses MSigDB **2025.1 human gene-symbol GMT** resources. Obtain the four files listed in [gene_sets/README.md](gene_sets/README.md) before running preflight. GMT resources are not bundled in the public code distribution.
 
+### Existing local raw layout
+
+All filenames in the core-input table are relative to `raw/`, except the explicitly listed bundled workbook under `gene_sets/`. An existing local directory may also contain preparation inputs and historical reference files:
+
+| Path relative to the project root | How the current code uses it |
+| --- | --- |
+| `raw/backup_before_02_2/` | Original metadata backup for rebuilding; 02_3 reads `TNBC_6k_metadata_Bogang_selected_before_02_2.RDS` inside this folder |
+| `raw/TNBC_6k_metadata_172FOVs_Bogang.RDS` | Yi's updated annotations; read by 02_3 only |
+| `raw/TNBC_6k_metadata_Bogang_selected.RDS` | Finalized metadata read by 03_2 and spatial scripts; 02_3 writes this path after preparation |
+| `raw/TNBC_6k_norm_Bogang.RDS` | Supplied normalized expression |
+| `raw/TNBC_6k_um_Bogang.RDS` | Supplied UMAP coordinates |
+| `raw/TNBC_6k_xy_Bogang.RDS` | Supplied spatial coordinates |
+| `raw/selected_subtype_specific_genes_tumor.csv` | Signature gene-list input used by 03_2 |
+| `raw/T_cell_signalling.xlsx` | Supported local workbook location; preferred over the bundled `gene_sets/T_cell_signalling.xlsx` by both the T-cell analysis and preflight |
+| `raw/Immunotype_Wu_172FOVs_40genes.csv` | Supplied immunotype reference; not read by the included workflow |
+| `raw/top_40_genes_tumor.csv` | Additional historical gene-list file; not read by the included workflow and not a replacement for the signature CSV above |
+
+Keep this existing local layout. No move of the local workbook is required. The repository carries a separate copy under `gene_sets/` so a collaborator does not need it sent again. The `raw/` directory and its RDS files remain excluded from Git; this table documents their expected locations.
+
+The same metadata filename can contain the original input before preparation or the finalized object afterward. A folder screenshot or modification date cannot establish which version is present. Use preflight to check the finalized input. Rebuild with 02_3 only when needed, using the untouched backup and Yi's updated file.
+
 ## Input provenance and annotation versions
 
 The initial data package supplied by Yi comprised four preprocessed R objects: `TNBC_6k_metadata_Bogang_selected.RDS` (cell metadata), `TNBC_6k_norm_Bogang.RDS` (normalized expression), `TNBC_6k_um_Bogang.RDS` (UMAP), and `TNBC_6k_xy_Bogang.RDS` (spatial coordinates). Here, `raw/` means project inputs; these are not instrument-level raw reads or images. “Supplied by” identifies the data provider, not authorship of every upstream processing step.
