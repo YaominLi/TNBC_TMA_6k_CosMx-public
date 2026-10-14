@@ -6,14 +6,18 @@ R analysis code for the TNBC CosMx 6k project.
 
 The `raw/` directory is intentionally excluded from Git. Supply the six core inputs separately and place them under `raw/` at the repository root without renaming files.
 
-Expected core inputs include:
+Request these six core files from the project owner before attempting a full run:
 
-- `raw/TNBC_6k_metadata_Bogang_selected.RDS`
-- `raw/TNBC_6k_norm_Bogang.RDS`
-- `raw/TNBC_6k_xy_Bogang.RDS`
-- `raw/TNBC_6k_um_Bogang.RDS`
-- `raw/selected_subtype_specific_genes_tumor.csv`
-- `raw/T_cell_signalling.xlsx`
+| File under `raw/` | Contents / role |
+| --- | --- |
+| `TNBC_6k_metadata_Bogang_selected.RDS` | Finalized cell annotations, slide/FOV identifiers, and tumor-distance metadata |
+| `TNBC_6k_norm_Bogang.RDS` | Normalized expression used for signatures, pseudobulk, and expression analyses |
+| `TNBC_6k_xy_Bogang.RDS` | Spatial cell coordinates |
+| `TNBC_6k_um_Bogang.RDS` | UMAP embedding coordinates |
+| `selected_subtype_specific_genes_tumor.csv` | ID/IE/IN tumor-signature gene lists |
+| `T_cell_signalling.xlsx` | T-cell signaling gene sets |
+
+The repository supplies code and environment definitions; downloading it alone does not supply these data. Input identities are recorded in [environment/raw_core_sha256.txt](environment/raw_core_sha256.txt).
 
 Enrichment uses MSigDB **2025.1 human gene-symbol GMT** resources. Obtain the four files listed in [gene_sets/README.md](gene_sets/README.md) before running preflight. GMT resources are not bundled in the public code distribution.
 
@@ -37,7 +41,13 @@ renv::restore()
 source("scripts/reproducibility_preflight.R")
 ```
 
-7. After `Preflight PASSED`, start the canonical analysis at `analysis/03_2_redefine_immunotype_top40_tumorOnly_nonTumorComposition.R`.
+7. After `Preflight PASSED`, run the classification entry point:
+
+```r
+source("analysis/03_2_redefine_immunotype_top40_tumorOnly_nonTumorComposition.R")
+```
+
+Wait for its final success message and confirm the metadata handoff exists before running dependent branches. Run scripts individually using the dependency order below; filenames are not a requirement to execute every script in sequence.
 
 The renv lockfile does not install R itself, so using R 4.5.1 is the closest match to the audited analysis workstation.
 
@@ -45,7 +55,7 @@ The renv lockfile does not install R itself, so using R 4.5.1 is the closest mat
 
 Open `TNBC_TMA_6k_CosMx.Rproj` before running analyses. Current reproducibility scripts locate the project by searching upward for this file, so they do not depend on a user-specific drive letter.
 
-## Canonical current workflow
+## Included analysis workflow
 
 For reproduction from the finalized metadata supplied in `raw/`, the main analysis entry point is:
 
@@ -67,12 +77,15 @@ For reproduction from the finalized metadata supplied in `raw/`, the main analys
 3. Formal enrichment also branches directly from the 03_2 metadata output plus normalized expression:
    - `04_1_DEG_enrichment_tumorOnly_by_03_2_blockSlide.R` — pairwise tumor contrasts
    - `04_2_GSEA_vsRest_tumorOnly_by_03_2_blockSlide.R` — tumor one-vs-rest contrasts
-   - `04_3_enrichment_all_celltypes_from_03_6.R` — formal cell-type-specific analysis using the 04_1/04_2 framework. Despite the historical filename, it recomputes FOV pseudobulk directly from 03_2 metadata + normalized expression and does **not** require 03_6 outputs.
 4. Spatial visualization is independent of the 03_2/04 outputs and reads finalized objects from `raw/`:
    - `05_0_1_plot_all_FOV_celltypes.R`
    - `05_1b_plot_selected_FOV_gene_projection_voronoi.R`
 
 `05_0_check_spatial_plot_inputs.R` is a QC utility for the raw spatial objects.
+
+Before running a branch, review its parameter block for target genes, cell types, thresholds, and FOV selection. In particular, 05_1b defaults to three representative FOVs (`s3f1`, `s4f79`, `s2f2`); it is not an all-FOV cohort analysis. Density filtering can omit cells from spatial panels, so input summary counts may differ from the displayed counts.
+
+Generated tables and PDFs are written beneath each script's `results/` directory. Keep the source commit, session information, parameter files, and console completion/error alongside each run. Rerunning a script may replace outputs; copy previous results before comparison.
 
 The current workflow starts at **03_2**. The 03 branches are independent after that handoff; spatial scripts read finalized raw inputs directly.
 
@@ -113,12 +126,12 @@ Package versions are frozen in `renv.lock`, generated on the analysis workstatio
 ## Reproducibility notes
 
 - `04_1` and `04_2` include online KEGG calls through clusterProfiler. Those results can depend on the annotation state available at run time. Use the fixed H/C2/C5/C7 GMT version listed above for reproducible local enrichment.
-- `04_3` defaults to recomputing rather than reusing checkpoints. Set `resume_existing <- TRUE` only when intentionally resuming an unchanged run.
 - Generated `results/` are excluded from Git and should be regenerated from the supplied inputs.
 
 
 ### Known enrichment limitations
 
-fgsea may return unestimated NES/p values when gene statistics are unbalanced; these remain NA and must not be treated as nonsignificant. In 04_1/04_2, partially missing scores can also produce a missing descriptive best-subtype label. Existing 04_3 checkpoints should be checked for complete collection/contrast coverage: a completed cell-type log alone does not establish coverage. Checkpoint-recovery changes under development are not included in this release.
+fgsea may return unestimated NES/p values when gene statistics are unbalanced; these remain NA and must not be treated as nonsignificant. In 04_1/04_2, partially missing scores can also produce a missing descriptive best-subtype label.
+
 
 No raw data or generated analysis results are included. Syntax checks do not independently validate biological results.

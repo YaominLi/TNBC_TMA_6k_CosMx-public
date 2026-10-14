@@ -13,7 +13,7 @@ The project environment is now frozen in `renv.lock`, generated on the analysis 
 renv::restore()
 ```
 
-5. Run:
+5. Obtain the four fixed-version GMT files listed in [gene_sets/README.md](../gene_sets/README.md) and place them under `gene_sets/`, then run:
 
 ```r
 source("scripts/reproducibility_preflight.R")
