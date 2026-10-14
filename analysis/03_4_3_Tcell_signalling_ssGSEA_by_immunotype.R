@@ -98,7 +98,9 @@ dir.create(dat_dir, recursive = TRUE, showWarnings = FALSE)
 
 meta_file <- file.path(in_dir, "03_2_meta_with_immunotype_BW_top_40.rds")
 norm_file <- file.path(raw_dir, "TNBC_6k_norm_Bogang.RDS")
+# Prefer an explicitly supplied local copy; otherwise use the bundled reference.
 xlsx_path <- file.path(raw_dir, "T_cell_signalling.xlsx")
+if (!file.exists(xlsx_path)) xlsx_path <- file.path(proj, "gene_sets", "T_cell_signalling.xlsx")
 
 # =========================================================
 # 02 packages
@@ -1711,3 +1713,4 @@ message("Nine violin figure-set PDFs are written to: ", fig_dir)
 message("Six mean-heatmap PDFs are also written to: ", fig_dir)
 message("Violin PDF size: ", violin_pdf_width, " x ", violin_pdf_height, " inches")
 message("Colors are fixed: ID pure black, IE pure blue, IN pure red.")
+

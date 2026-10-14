@@ -14,6 +14,9 @@ options(stringsAsFactors = FALSE)
 
 check_large_expression <- FALSE
 check_core_hashes <- TRUE
+# Opt in only after reconstructing metadata with 02_3. This does not establish
+# equality with the audited metadata; all structural checks remain required.
+rebuilt_metadata <- isTRUE(getOption("tnbc.rebuilt_metadata", FALSE))
 
 find_project_root <- function(start = getwd()) {
   current <- tryCatch(
@@ -121,6 +124,10 @@ core_inputs <- c(
 
 add_report("== Core raw inputs ==")
 core_paths <- file.path(raw_dir, core_inputs)
+xlsx_index <- match("T_cell_signalling.xlsx", core_inputs)
+if (!file.exists(core_paths[xlsx_index])) {
+  core_paths[xlsx_index] <- file.path(gene_set_dir, "T_cell_signalling.xlsx")
+}
 for (i in seq_along(core_inputs)) {
   if (file.exists(core_paths[[i]])) {
     size_mb <- file.info(core_paths[[i]])$size / 1024^2
@@ -180,6 +187,11 @@ if (check_core_hashes) {
   }
   
   bad_hash <- core_inputs[observed_sha256[core_inputs] != expected_sha256[core_inputs]]
+  if (rebuilt_metadata) {
+    add_report("WARN: rebuilt metadata mode: metadata file identity is not required; biological equality is NOT established by structural checks.")
+    add_report("Observed metadata SHA-256: ", observed_sha256[["TNBC_6k_metadata_Bogang_selected.RDS"]])
+    bad_hash <- setdiff(bad_hash, "TNBC_6k_metadata_Bogang_selected.RDS")
+  }
   if (length(bad_hash) > 0) {
     stop_with_report(
       "Core raw input SHA-256 mismatch: ",
@@ -343,4 +355,5 @@ message("Report: ", file.path(out_dir, "reproducibility_preflight.txt"))
 if (!check_large_expression) {
   message("For the optional full expression-object check, set check_large_expression <- TRUE and rerun.")
 }
+
 

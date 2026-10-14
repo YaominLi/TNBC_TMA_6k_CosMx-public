@@ -4,20 +4,20 @@ R analysis code for the TNBC CosMx 6k project.
 
 ## Data layout
 
-The `raw/` directory is intentionally excluded from Git. Supply the six core inputs separately and place them under `raw/` at the repository root without renaming files.
+The `raw/` directory is intentionally excluded from Git. Place the five external core inputs under `raw/` at the repository root. The small T-cell gene-set workbook is bundled in `gene_sets/`.
 
-Request these six core files from the project owner before attempting a full run:
+The analysis uses these six core inputs:
 
-| File under `raw/` | Contents / role |
+| Input | Contents / role |
 | --- | --- |
 | `TNBC_6k_metadata_Bogang_selected.RDS` | Finalized cell annotations, slide/FOV identifiers, and tumor-distance metadata |
 | `TNBC_6k_norm_Bogang.RDS` | Normalized expression used for signatures, pseudobulk, and expression analyses |
 | `TNBC_6k_xy_Bogang.RDS` | Spatial cell coordinates |
 | `TNBC_6k_um_Bogang.RDS` | UMAP embedding coordinates |
 | `selected_subtype_specific_genes_tumor.csv` | ID/IE/IN tumor-signature gene lists |
-| `T_cell_signalling.xlsx` | T-cell signaling gene sets |
+| `gene_sets/T_cell_signalling.xlsx` | Bundled T-cell signaling gene sets; an existing `raw/T_cell_signalling.xlsx` takes precedence and is checked against the same hash |
 
-The repository supplies code and environment definitions; downloading it alone does not supply these data. Input identities are recorded in [environment/raw_core_sha256.txt](environment/raw_core_sha256.txt).
+The repository supplies code, environment definitions and the T-cell gene-set workbook; the RDS objects and tumor-signature CSV must still be supplied separately. Input identities are recorded in [environment/raw_core_sha256.txt](environment/raw_core_sha256.txt).
 
 Enrichment uses MSigDB **2025.1 human gene-symbol GMT** resources. Obtain the four files listed in [gene_sets/README.md](gene_sets/README.md) before running preflight. GMT resources are not bundled in the public code distribution.
 
@@ -25,7 +25,7 @@ Enrichment uses MSigDB **2025.1 human gene-symbol GMT** resources. Obtain the fo
 
 The initial data package supplied by Yi comprised four preprocessed R objects: `TNBC_6k_metadata_Bogang_selected.RDS` (cell metadata), `TNBC_6k_norm_Bogang.RDS` (normalized expression), `TNBC_6k_um_Bogang.RDS` (UMAP), and `TNBC_6k_xy_Bogang.RDS` (spatial coordinates). Here, `raw/` means project inputs; these are not instrument-level raw reads or images. “Supplied by” identifies the data provider, not authorship of every upstream processing step.
 
-Yi subsequently supplied `TNBC_6k_metadata_172FOVs_Bogang.RDS` (updated cell annotations and cancer-distance values) and `Immunotype_Wu_172FOVs_40genes.csv` (a supplied immunotype reference). These are provenance references, not additional inputs required by the current workflow. The immunotype reference CSV is distinct from `selected_subtype_specific_genes_tumor.csv`; the latter is the gene-list input used by 03_2. Provider attribution for that gene list and `T_cell_signalling.xlsx` is not established here.
+Yi subsequently supplied `TNBC_6k_metadata_172FOVs_Bogang.RDS` (updated cell annotations and cancer-distance values) and `Immunotype_Wu_172FOVs_40genes.csv` (a supplied immunotype reference). The updated metadata is required only when rebuilding the finalized input with 02_3; the immunotype-reference CSV is not required by the current workflow. The immunotype reference CSV is distinct from `selected_subtype_specific_genes_tumor.csv`; the latter is the gene-list input used by 03_2. Provider attribution for that gene list and `T_cell_signalling.xlsx` is not established here.
 
 **The current `TNBC_6k_metadata_Bogang_selected.RDS` is a locally prepared, finalized metadata object, not the unchanged original file with that name.** Preparation matched the original metadata and Yi's updated metadata by shared `cell_id`, retained the updated fine labels in `celltype_new`, and mapped those labels to the broader `BC6k_refined` classes used downstream. Previous annotations and distances were preserved in `BC6k_refined_old` and `disttonearesttumor_old`. Updated `disttonearestcancer` values were converted from mm to µm during preparation to produce `disttonearesttumor`; distance groups were recalculated. Do not convert this finalized distance again.
 
@@ -39,7 +39,7 @@ For a collaborator starting from a clean machine:
 
 1. Install **R 4.5.1**. RStudio is recommended.
 2. Clone this repository.
-3. Copy the six separately supplied core inputs listed above into `raw/` without renaming files.
+3. Supply the RDS inputs and tumor-signature CSV listed above. If using Yi's original data, follow the preparation instructions below; if using finalized metadata, skip preparation.
 4. Open `TNBC_TMA_6k_CosMx.Rproj` in RStudio. The tracked `.Rprofile` automatically activates the project renv environment. If using R without RStudio, start R with the repository root as the working directory so the same `.Rprofile` is loaded.
 5. Restore the frozen R package environment:
 
@@ -47,7 +47,7 @@ For a collaborator starting from a clean machine:
 renv::restore()
 ```
 
-6. Place the required GMT resources in `gene_sets/`, then run the reproducibility preflight:
+6. If needed, prepare metadata using 02_3 as described below. Place the required GMT resources in `gene_sets/`, then run the reproducibility preflight:
 
 ```r
 source("scripts/reproducibility_preflight.R")
@@ -62,6 +62,30 @@ source("analysis/03_2_redefine_immunotype_top40_tumorOnly_nonTumorComposition.R"
 Wait for its final success message and confirm the metadata handoff exists before running dependent branches. Run scripts individually using the dependency order below; filenames are not a requirement to execute every script in sequence.
 
 The renv lockfile does not install R itself, so using R 4.5.1 is the closest match to the audited analysis workstation.
+
+## Prepare metadata from collaborator inputs (before 03_2)
+
+Use this route when you have the original data package and Yi's updated annotation RDS, rather than the finalized metadata. Restore renv first. Place these files in `raw/`:
+
+- The **original, untouched** `TNBC_6k_metadata_Bogang_selected.RDS`.
+- Yi's `TNBC_6k_metadata_172FOVs_Bogang.RDS`.
+- The unchanged norm, xy and um RDS objects and the tumor-signature CSV listed above.
+
+Then run:
+
+```r
+source("analysis/02_3_rebuild_compatible_metadata_from_backup.R")
+options(tnbc.rebuilt_metadata = TRUE)
+source("scripts/reproducibility_preflight.R")
+# After Preflight PASSED:
+source("analysis/03_2_redefine_immunotype_top40_tumorOnly_nonTumorComposition.R")
+```
+
+02_3 preserves the original metadata at `raw/backup_before_02_2/TNBC_6k_metadata_Bogang_selected_before_02_2.RDS` and uses that immutable backup for reruns. It creates the finalized metadata at the original filename. If you already have this backup, you can supply it directly instead of placing an original file at the target path. Do not rename processed metadata as an original backup. The script rejects duplicate cell IDs, inconsistent FOV/slide identifiers, unknown labels and a cohort other than 275,204 cells / 172 FOVs / 5 slides before replacing the target. Supplied expression and coordinate objects are not modified.
+
+The `tnbc.rebuilt_metadata` option exempts **only the regenerated metadata file** from byte-for-byte SHA-256 matching. It records the observed hash and retains the metadata structure/cohort/coverage checks and hashes for all other inputs. Re-serialization may change file bytes, but matching dimensions alone does not establish identical data or biological results. The exact audited metadata is unavailable in this repository for an independent content comparison. Set this option in each new R session using regenerated metadata. With finalized audited inputs, leave it unset (the strict default).
+
+You do not need to run the superseded 02_1/02_2 transition scripts. If your metadata is already finalized, skip 02_3. Reports from preparation are written to `results/02_3/data/`.
 
 ## Project root
 
@@ -99,7 +123,7 @@ Before running a branch, review its parameter block for target genes, cell types
 
 Generated tables and PDFs are written beneath each script's `results/` directory. Keep the source commit, session information, parameter files, and console completion/error alongside each run. Rerunning a script may replace outputs; copy previous results before comparison.
 
-The current workflow starts at **03_2**. The 03 branches are independent after that handoff; spatial scripts read finalized raw inputs directly.
+The analysis starts at **03_2**, with **02_3** as an optional input-preparation step. The 03 branches are independent after that handoff; spatial scripts read finalized raw inputs directly.
 
 ## Preflight before analysis
 
@@ -147,3 +171,4 @@ fgsea may return unestimated NES/p values when gene statistics are unbalanced; t
 
 
 No raw data or generated analysis results are included. Syntax checks do not independently validate biological results.
+

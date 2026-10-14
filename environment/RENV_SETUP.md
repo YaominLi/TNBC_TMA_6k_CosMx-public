@@ -5,7 +5,7 @@ The project environment is now frozen in `renv.lock`, generated on the analysis 
 ## Collaborator: restore on a clean machine
 
 1. Install R 4.5.1 and clone the repository.
-2. Place the six separately supplied core inputs listed in [README.md](../README.md) under `raw/` at the repository root.
+2. Place the external RDS inputs and tumor-signature CSV listed in [README.md](../README.md) under `raw/`. The T-cell gene-set workbook is bundled under `gene_sets/`.
 3. Open `TNBC_TMA_6k_CosMx.Rproj`. The tracked `.Rprofile` sources `renv/activate.R`, which activates the project library and bootstraps the recorded renv version when needed.
 4. Restore package versions:
 
@@ -13,7 +13,7 @@ The project environment is now frozen in `renv.lock`, generated on the analysis 
 renv::restore()
 ```
 
-5. Obtain the four fixed-version GMT files listed in [gene_sets/README.md](../gene_sets/README.md) and place them under `gene_sets/`, then run:
+5. If starting from the original metadata and Yi's updated annotations, run the optional 02_3 preparation and set `options(tnbc.rebuilt_metadata = TRUE)` as documented in [README.md](../README.md#prepare-metadata-from-collaborator-inputs-before-03_2). With finalized audited metadata, skip this step. Obtain the four fixed-version GMT files listed in [gene_sets/README.md](../gene_sets/README.md) and place them under `gene_sets/`, then run:
 
 ```r
 source("scripts/reproducibility_preflight.R")
@@ -43,4 +43,5 @@ Then review and commit the reproducibility files:
 Do **not** commit `renv/library/`, `renv/staging/`, `renv/python/`, or other machine-specific caches.
 
 The current core raw-file SHA-256 identities are recorded in `environment/raw_core_sha256.txt` and are also checked by the preflight script. If a core raw input is intentionally replaced, update that manifest only after re-auditing the changed input and downstream consequences.
+
 
